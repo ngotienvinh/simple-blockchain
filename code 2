@@ -1,0 +1,86 @@
+import hashlib
+import json
+from time import time
+from uuid import uuid4
+
+class Blockchain:
+    def __init__(self):
+        self.chain = []
+        self.current_transactions = []
+
+        # Tạo khối genesis
+        self.new_block(previous_hash=1, proof=100)
+
+    def new_block(self, proof, previous_hash=None):
+        """
+        Tạo một khối mới trong blockchain
+        :param proof: Số nguyên được sinh ra từ thuật toán Proof of Work
+        :param previous_hash: Hash của khối trước đó
+        :return: Khối mới
+        """
+
+        block = {
+            'index': len(self.chain) + 1,
+            'timestamp': time(),
+            'transactions': self.current_transactions,
+            'proof': proof,
+            'previous_hash': previous_hash or self.hash(self.chain[-1]),
+        }
+
+        # Xóa danh sách giao dịch hiện tại
+        self.current_transactions = []
+
+        self.chain.append(block)
+        return block
+
+    def new_transaction(self, sender, recipient, amount):
+        """
+        Tạo một giao dịch mới vào danh sách giao dịch hiện tại
+        :param sender: Địa chỉ của người gửi
+        :param recipient: Địa chỉ của người nhận
+        :param amount: Số lượng tiền giao dịch
+        :return: Index của khối chứa giao dịch
+        """
+        self.current_transactions.append({
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount,
+        })
+
+        return self.last_block['index'] + 1
+
+    @staticmethod
+    def hash(block):
+        """
+        Tạo một SHA-256 hash của một khối
+        :param block: Khối cần được hash
+        :return: Một chuỗi hash
+        """
+
+        # Sắp xếp dictionary để đảm bảo tính nhất quán của hash
+        block_string = json.dumps(block, sort_keys=True).encode()
+        return hashlib.sha256(block_string).hexdigest()
+
+    @property
+    def last_block(self):
+        # Trả về khối cuối cùng trong blockchain
+        return self.chain[-1]
+
+
+# Khởi tạo blockchain
+blockchain = Blockchain()
+
+# Thêm giao dịch mới vào blockchain
+blockchain.new_transaction("Alice", "Bob", 1)
+
+# Định nghĩa các phần tử cần thiết cho Proof of Work
+
+# Khởi tạo giá trị proof = 100, previous_hash = hash của khối trước đó
+proof = 100
+previous_hash = blockchain.hash(blockchain.last_block)
+
+# Kiểm tra xem proof có đúng hay không
+is_valid = blockchain.valid_proof(previous_hash, proof)
+
+# In kết quả kiểm tra
+print("Is valid:", is_valid)
